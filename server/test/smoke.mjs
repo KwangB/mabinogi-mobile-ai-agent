@@ -279,14 +279,14 @@ await test('craft: 재료 부족은 무료로 사전 차단 / invalid_count 는 
 });
 
 await test('alter → collect_altered 흐름', async () => {
-  const c = new Client('alter', { MOCK_ALTER_MS: '300' });
+  const c = new Client('alter', { MOCK_ALTER_MS: '2500' });
   await c.init();
   const early = (await c.tool('collect_altered', {})).payload;
   assert.equal(early.error, 'no_altering');
   assert.equal((await c.tool('alter', { displayName: '가는 실' })).payload.result, 'started');
   const notYet = (await c.tool('collect_altered', {})).payload;
   assert.equal(notYet.error, 'no_completed_work');
-  await new Promise((r) => setTimeout(r, 450));
+  await new Promise((r) => setTimeout(r, 3000));
   const got = (await c.tool('collect_altered', {})).payload;
   assert.equal(got.collected, 1);
   assert.deepEqual(got.rewards, [{ DisplayName: '가는 실', Count: 5 }]);
