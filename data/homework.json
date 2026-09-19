@@ -1,0 +1,140 @@
+{
+  "version": "2026-09-19",
+  "about": "마비노기 모바일 숙제(일일/주간 반복 콘텐츠) 기본 목록. 자유롭게 고쳐 쓰세요. verify:true 는 출처가 오래됐거나 횟수를 직접 확인하지 못한 항목입니다(docs/homework.md 참고).",
+  "reset": { "hour": 6, "weeklyDay": 1, "utcOffsetHours": 9 },
+  "fields": {
+    "cycle": "daily(매일 06:00 KST 초기화) | weekly(매주 월요일 06:00 KST 초기화)",
+    "scope": "character(캐릭터별) | account(계정 공유)",
+    "assist": "auto(게임에서 진행도 자동 동기화) | materials(AI 가 재료 채집을 도울 수 있음, 교환·제출은 직접) | manual(직접 하고 체크) | combat(전투 콘텐츠: AI 커넥터로 대신할 수 없음, 직접 하고 체크)",
+    "preset": "core(기본 켜짐) | shop | barter | event | legacy | raid-abyss — homework(action:'enable', group:'preset:shop') 로 묶음 단위로 켤 수 있음. raid-abyss(어비스·레이드)는 '사람이 직접 하는 콘텐츠'라 체크리스트에서 빼고 아래 guides 로 안내한다(2026-09-19 사용자 결정)."
+  },
+  "guides": [
+    {
+      "id": "abyss",
+      "name": "어비스 (룬다 어비스)",
+      "aliases": ["어비스", "룬다", "룬다 어비스", "허상의 정박지", "광기의 동굴", "흩어진 물길"],
+      "basis": "공식 에린 가이드 「어비스」(2026-07-02 기준) · 9/17 업데이트 노트",
+      "loot": "클리어 전리품은 주 3회까지(종류별 최대 단계 기준), 매주 월요일 06:00 초기화. 이후 반복 클리어는 하트 토큰·골드·마물 퇴치 증표 소량뿐 → 전리품을 다 받았으면 더 돌 이유가 거의 없다.",
+      "structure": "구역: 허상의 정박지 / 광기의 동굴 / 흩어진 물길 · 난이도: 입문 → 어려움 → 매우 어려움 → 지옥1~3 · 타임어택 제한 11분(각 난이도 최초 달성 시 1회 보상)",
+      "entry": [
+        "캐릭터 레벨 100 + 퀘스트 '깊은 바다의 심연으로' 완료",
+        "난이도별 필요 전투력·마도 저항 충족(파티장 기준. 파티원은 미충족이어도 함께하기로 입장 가능)",
+        "혼자하기는 단독 입장만 가능하고 일부 몬스터 패턴이 함께하기와 다르다"
+      ],
+      "requirements": [
+        { "label": "지옥2", "arcaneResistance": 6000, "arcanePressure": 6600, "basis": "9/17 하향 조정(기존 6,500 / 7,200)" },
+        { "label": "지옥3", "combatScore": 102500, "recommendedCombatScore": 108000, "overwhelmCombatScore": 124000, "arcaneResistance": 7200, "arcanePressure": 7800, "opens": "2026-09-21(월) 06:00" }
+      ],
+      "tips": [
+        "시즌0·시즌1 룬은 어비스(입문~지옥3)에서 유일 효과가 적용되지 않는다(9/17). 시즌2 룬 세팅인지 확인.",
+        "클리어 후 나가지 않고 [다시 하기] / [다른 던전 가기] 가능(9/17). 우연한 만남으로 깼으면 우연한 만남으로만 이어진다.",
+        "마물 퇴치 증표로 전리품 상자 구매·주간 보상 상향이 가능하다.",
+        "어비스로 뚫린 검은 구멍은 검은 구멍 탐험 횟수와 무관하게 입장할 수 있다(어비스 입문 1회 이상 클리어 필요)."
+      ],
+      "notesFile": "docs/guides/abyss-notes.md"
+    },
+    {
+      "id": "raid",
+      "name": "레이드",
+      "aliases": ["레이드", "카브락", "에이렐", "화이트 서큐버스", "화서큐", "서큐버스", "타바르타스", "뱅가드 브리치", "뱅가드"],
+      "basis": "공식 에린 가이드 「레이드」(2026-09-17 기준) · 9/17 업데이트 노트",
+      "loot": "클리어 전리품은 보스별 주 1회(난이도 무관), 매주 월요일 06:00 초기화. 반복 클리어 전리품은 하트 토큰 3 · 시즌 경험치 200 · 골드 1,200 수준.",
+      "structure": "카브락(최대 8인) · 화이트 서큐버스(4인) · 에이렐(4인) — 모두 레벨 65 + 선행 퀘스트. (타바르타스·뱅가드 브리치는 커뮤니티 트래커에만 있어 규칙 미확인)",
+      "entry": [
+        "부활 제한 — 카브락 입문: 함께 20회 / 혼자 5회 · 카브락 어려움: 10회 / 3회 · 화이트 서큐버스 어려움·매우 어려움: 5회 / 3회 · 에이렐 어려움: 5회 / 3회",
+        "에이렐 어려움·매우 어려움, 화이트 서큐버스 어려움·매우 어려움에 [혼자하기] 추가(9/17). 조건(전투력·마도 저항·압력)은 파티와 같고 일부 패턴만 1인용으로 바뀐다."
+      ],
+      "requirements": [
+        { "label": "에이렐 매우 어려움", "combatScore": 88500, "recommendedCombatScore": 93000, "overwhelmCombatScore": 107000, "arcaneResistance": 3000, "arcanePressure": 3500, "opens": "2026-09-21(월) 06:00" }
+      ],
+      "tips": [
+        "지난 시즌 룬 유일 효과 미적용: 카브락(입문~어려움), 에이렐(어려움·매우 어려움), 화이트 서큐버스(매우 어려움) 등(9/17).",
+        "더 높은 난이도이거나 [함께하기]일수록 반복 클리어 특별 전리품 확률이 오른다.",
+        "전리품을 받은 보스는 그 주에 다시 갈 필요가 없다(길드 미션 등 다른 목적이 없다면)."
+      ],
+      "notesFile": "docs/guides/raid-notes.md"
+    }
+  ],
+  "items": [
+    { "id": "daily_mission", "name": "일일 미션", "aliases": ["일미", "데일리 미션"], "group": "일일", "cycle": "daily", "scope": "character", "count": 1, "assist": "auto", "auto": { "source": "daily_missions" }, "preset": "core", "note": "AI 커넥터가 진행도를 읽어 자동 반영. 보상 수령까지 해야 완료." },
+    { "id": "black_hole_daily", "name": "검은 구멍 (일일)", "aliases": ["검구", "검은구멍", "일일 검구"], "group": "일일", "cycle": "daily", "scope": "character", "count": 1, "assist": "combat", "preset": "core", "note": "일일 탐험 횟수 1회 제공, 안 쓰면 다음 날 06시에 소멸. 어비스로 뚫린 검은 구멍은 횟수와 무관." },
+    { "id": "weekday_dungeon", "name": "요일 던전", "aliases": ["요던"], "group": "일일", "cycle": "daily", "scope": "character", "count": 1, "assist": "combat", "preset": "core" },
+    { "id": "parttime_daily", "name": "일일 아르바이트", "aliases": ["알바", "아르바이트"], "group": "일일", "cycle": "daily", "scope": "character", "count": 2, "assist": "manual", "preset": "core", "verify": true, "note": "오전/오후 각 1회로 집계(트래커 기준)." },
+    { "id": "deep_dungeon_daily", "name": "심층 던전", "aliases": ["심층", "심던"], "group": "일일", "cycle": "daily", "scope": "character", "count": 1, "assist": "combat", "preset": "core", "verify": true },
+    { "id": "tower_of_wraith", "name": "망령의 탑", "aliases": ["망탑"], "group": "일일", "cycle": "daily", "scope": "character", "count": 5, "assist": "combat", "preset": "legacy", "verify": true, "note": "5회 등반(2025년 자료). 현재 규칙은 직접 확인." },
+    { "id": "hunting_zone_boss", "name": "사냥터 구역 보스", "aliases": ["사냥터 보스", "구역 보스"], "group": "일일", "cycle": "daily", "scope": "character", "count": 1, "assist": "combat", "preset": "legacy", "verify": true },
+
+    { "id": "cashshop_free", "name": "캐시샵 매일 무료 상품", "aliases": ["무료 상품", "무료 패션", "캐시샵 무료"], "group": "일일 · 계정", "cycle": "daily", "scope": "account", "count": 1, "assist": "manual", "preset": "core", "note": "캐시샵은 AI 커넥터가 접근할 수 없는 영역 → 직접." },
+    { "id": "cashshop_gem_box", "name": "조각난 보석 보물상자 (4,000G)", "aliases": ["보석 상자", "보물상자"], "group": "일일 · 계정", "cycle": "daily", "scope": "account", "count": 10, "assist": "manual", "preset": "core", "note": "캐시샵 → 아이템 샵. 골드 구매, 하루 10회." },
+    { "id": "barter_holywater_maven", "name": "성수 교환 — 메이븐 (통밀빵 1 → 성수 1)", "aliases": ["메이븐 성수"], "group": "일일 · 계정", "cycle": "daily", "scope": "account", "count": 1, "assist": "manual", "preset": "core", "note": "티르코네일. 계정당 1회." },
+    { "id": "barter_holywater_endelyon", "name": "성수 교환 — 엔델리온 (통밀빵 10 → 성수 10)", "aliases": ["엔델리온 성수"], "group": "일일 · 계정", "cycle": "daily", "scope": "account", "count": 1, "assist": "manual", "preset": "core", "note": "티르코네일. 계정당 1회." },
+
+    { "id": "black_hole_weekly", "name": "검은 구멍 (주간 초과)", "aliases": ["주간 검구", "검구 주간"], "group": "주간", "cycle": "weekly", "scope": "character", "count": 7, "assist": "combat", "preset": "core", "note": "일일 제공분과 별도로 주 7회. 주간 전리품은 마물 퇴치 증표로 정산 가능(2026-09-21부터 80개)." },
+    { "id": "barrier_weekly", "name": "불길한 소환의 결계", "aliases": ["결계", "소환의 결계"], "group": "주간", "cycle": "weekly", "scope": "character", "count": 7, "assist": "combat", "preset": "core", "schedule": { "type": "hourly" }, "note": "06시부터 1시간 간격 출현. 전리품 횟수는 주간 관리. 증표 정산 가능(2026-09-21부터 100개)." },
+    { "id": "deep_dungeon_vh", "name": "심층 던전 (매우 어려움)", "aliases": ["심층 매어"], "group": "주간", "cycle": "weekly", "scope": "character", "count": 1, "assist": "combat", "preset": "core", "verify": true },
+    { "id": "guild_weekly_request", "name": "[주간 목표] 모험가 길드의 정기 의뢰", "aliases": ["정기 의뢰", "주간 목표"], "group": "주간", "cycle": "weekly", "scope": "character", "count": 1, "assist": "auto", "auto": { "source": "quest", "titleIncludes": "모험가 길드의 정기 의뢰" }, "preset": "core", "note": "퀘스트 트래커에 보일 때만 자동 동기화(심층 던전 → 던전 → 사냥터 순 진행). 핵심 보상은 1회차(엘리트 연금술 재연소 촉매). 2회차부터는 골드+하트 토큰이라 선택.",
+      "plan": {
+        "about": "사용자 설정(2026-09-19). costPerRun = 1회 입장에 드는 재화 수(게임 입장 화면에서 확인해 숫자로 적으면, 남은 횟수×비용×더블 루팅 2배를 보유량과 비교해 준다). minLevel = 입장 레벨. 목표 설명에 match 글자가 들어 있으면 그 줄의 설정을 적용한다. 위에서부터 먼저 맞는 것이 적용되므로 '심층'을 '던전'보다 위에 둔다.",
+        "objectives": [
+          { "match": "심층", "label": "심층 던전", "where": "입장 레벨 100 심층 던전", "difficulty": "어려움", "doubleLoot": false, "entryCurrency": "마족 공물", "costPerRun": null, "minLevel": 100, "tip": "정확한 던전 이름을 알면 where 를 고쳐 두세요." },
+          { "match": "던전", "label": "던전", "where": "피오드 던전", "doubleLoot": true, "entryCurrency": "은동전", "costPerRun": null },
+          { "match": "사냥터", "label": "사냥터", "where": "창백한 산", "doubleLoot": true, "entryCurrency": "은동전", "costPerRun": null }
+        ],
+        "fallbackObjectives": [
+          { "label": "심층 던전", "goal": 3 },
+          { "label": "던전", "goal": 5 },
+          { "label": "사냥터", "goal": 5 }
+        ],
+        "watchCurrencies": ["은동전", "공물", "정령의 날개"],
+        "notes": [
+          "더블 루팅: 은동전 2배 소모, 보상 2배(공식 가이드). 더블 루팅 1회가 의뢰 횟수 2회로 세어지는지는 확인되지 않음 → 게임의 진행도를 기준으로 판단.",
+          "임무를 선택하지 않고 입장하면 [자동 재도전]을 쓸 수 있다(1회당 정령의 날개 3개, 동행 중이면 하트 토큰도 소모). 임무 미선택 입장은 은동전/공물 보상 구조가 다르므로 더블 루팅과 동시에 쓸 수 있는지는 게임에서 확인.",
+          "전투 콘텐츠이므로 직접 플레이한다. AI 는 진행도 확인·재화 점검·기록만 한다."
+        ]
+      } },
+    { "id": "token_shop_weekly", "name": "마물 퇴치 증표 상점 주간 구매", "aliases": ["증표 상점", "증표 교환"], "group": "주간", "cycle": "weekly", "scope": "character", "count": 1, "assist": "manual", "preset": "core", "note": "아득한 별의 인장, 강화 재연소 촉매, 엘리트 촉매, 룬의 파편, 불사의 가루 등. 마을 간 주간 구매 횟수 공유." },
+    { "id": "bulletin_board", "name": "임무 게시판 주간 임무", "aliases": ["임무 게시판", "게시판"], "group": "주간", "cycle": "weekly", "scope": "character", "count": 1, "assist": "materials", "preset": "core", "verify": true, "note": "티르코네일/던바튼/콜헨/반호르/이멘마하. 채집·요리·제작 납품 재료는 AI 가 모을 수 있지만 수락·납품은 직접. 마을별로 나눠 관리하려면 항목을 추가하세요." },
+
+    { "id": "fieldboss_krama", "name": "필드 보스 — 크라마", "aliases": ["크라마"], "group": "필드 보스", "cycle": "weekly", "scope": "character", "count": 1, "assist": "combat", "preset": "core", "schedule": { "type": "times", "times": ["12:00", "18:00", "20:00", "22:00"], "verify": true } },
+    { "id": "fieldboss_drochenem", "name": "필드 보스 — 드로흐에넴", "aliases": ["드로흐에넴", "드로흐"], "group": "필드 보스", "cycle": "weekly", "scope": "character", "count": 1, "assist": "combat", "preset": "core", "schedule": { "type": "times", "times": ["12:00", "18:00", "20:00", "22:00"], "verify": true }, "note": "'매우 어려움'은 2026-09-21(월) 06시 오픈." },
+    { "id": "fieldboss_tormog", "name": "필드 보스 — 토르모그", "aliases": ["토르모그"], "group": "필드 보스", "cycle": "weekly", "scope": "character", "count": 1, "assist": "combat", "preset": "core", "schedule": { "type": "times", "times": ["12:00", "18:00", "20:00", "22:00"], "verify": true } },
+    { "id": "fieldboss_angrbahan", "name": "필드 보스 — 앙그르바한", "aliases": ["앙그르바한", "앙그르"], "group": "필드 보스", "cycle": "weekly", "scope": "character", "count": 1, "assist": "combat", "preset": "core", "schedule": { "type": "times", "times": ["12:00", "18:00", "20:00", "22:00"], "verify": true } },
+    { "id": "fieldboss_peri", "name": "필드 보스 — 페리", "aliases": ["페리"], "group": "필드 보스", "cycle": "weekly", "scope": "character", "count": 1, "assist": "combat", "preset": "legacy" },
+    { "id": "fieldboss_crabbach", "name": "필드 보스 — 크라브바흐", "aliases": ["크라브바흐"], "group": "필드 보스", "cycle": "weekly", "scope": "character", "count": 1, "assist": "combat", "preset": "legacy" },
+
+    { "id": "abyss_1", "name": "어비스 — 허상의 정박지", "aliases": ["허상의 정박지", "정박지", "첫 번째 관문"], "group": "어비스", "cycle": "weekly", "scope": "character", "count": 1, "assist": "combat", "preset": "raid-abyss", "note": "룬다 어비스. 클리어 전리품은 주 3회까지, 월 06시 초기화." },
+    { "id": "abyss_2", "name": "어비스 — 광기의 동굴", "aliases": ["광기의 동굴", "두 번째 관문"], "group": "어비스", "cycle": "weekly", "scope": "character", "count": 1, "assist": "combat", "preset": "raid-abyss" },
+    { "id": "abyss_3", "name": "어비스 — 흩어진 물길", "aliases": ["흩어진 물길", "물길", "세 번째 관문"], "group": "어비스", "cycle": "weekly", "scope": "character", "count": 1, "assist": "combat", "preset": "raid-abyss" },
+    { "id": "abyss_4", "name": "어비스 — 네 번째 관문", "aliases": ["네 번째 관문"], "group": "어비스", "cycle": "weekly", "scope": "character", "count": 1, "assist": "combat", "preset": "legacy", "verify": true, "note": "커뮤니티 트래커에는 4관문까지 있음. 본인 진행 단계에 맞게 켜세요." },
+
+    { "id": "raid_white_succubus", "name": "레이드 — 화이트 서큐버스", "aliases": ["화이트 서큐버스", "화서큐", "서큐"], "group": "레이드", "cycle": "weekly", "scope": "character", "count": 1, "assist": "combat", "preset": "raid-abyss", "note": "클리어 전리품은 보스별 주 1회(난이도 무관)." },
+    { "id": "raid_airel", "name": "레이드 — 에이렐", "aliases": ["에이렐"], "group": "레이드", "cycle": "weekly", "scope": "character", "count": 1, "assist": "combat", "preset": "raid-abyss", "note": "'매우 어려움'은 2026-09-21(월) 06시 오픈." },
+    { "id": "raid_cavrak", "name": "레이드 — 카브락", "aliases": ["카브락"], "group": "레이드", "cycle": "weekly", "scope": "character", "count": 1, "assist": "combat", "preset": "raid-abyss" },
+    { "id": "raid_tabartas", "name": "레이드 — 타바르타스", "aliases": ["타바르타스"], "group": "레이드", "cycle": "weekly", "scope": "character", "count": 1, "assist": "combat", "preset": "raid-abyss", "verify": true },
+    { "id": "vanguard_breach", "name": "뱅가드 브리치", "aliases": ["뱅가드", "브리치"], "group": "레이드", "cycle": "weekly", "scope": "character", "count": 3, "assist": "combat", "preset": "raid-abyss", "verify": true },
+
+    { "id": "weekly_mission", "name": "주간 미션", "aliases": ["주미", "위클리 미션"], "group": "주간 · 계정", "cycle": "weekly", "scope": "account", "count": 1, "assist": "auto", "auto": { "source": "weekly_missions" }, "preset": "core", "note": "계정 단위. AI 커넥터가 진행도를 읽어 자동 반영." },
+    { "id": "guild_mission", "name": "길드 미션", "aliases": ["길미"], "group": "주간 · 계정", "cycle": "weekly", "scope": "account", "count": 1, "assist": "manual", "preset": "core", "note": "길드 운영은 AI 가 관여할 수 없는 영역." },
+
+    { "id": "shop_inn_holywater", "name": "여관 — 성수 (하트 토큰, 주 20회)", "aliases": ["여관 성수"], "group": "주간 상점 · 계정", "cycle": "weekly", "scope": "account", "count": 20, "assist": "manual", "preset": "shop" },
+    { "id": "shop_inn_food", "name": "여관 — 사과 주스/구운 고기/감자 샐러드 (각 주 2회)", "aliases": ["여관 음식"], "group": "주간 상점 · 계정", "cycle": "weekly", "scope": "account", "count": 6, "assist": "manual", "preset": "shop" },
+    { "id": "shop_church_holywater", "name": "성당 — 성수 (1,500G, 주 5회)", "aliases": ["성당 성수"], "group": "주간 상점 · 계정", "cycle": "weekly", "scope": "account", "count": 5, "assist": "manual", "preset": "shop" },
+    { "id": "shop_emulsifier", "name": "강화 비약 유화제 (라사·스튜어트 각 주 10회)", "aliases": ["유화제"], "group": "주간 상점 · 계정", "cycle": "weekly", "scope": "account", "count": 20, "assist": "manual", "preset": "shop" },
+    { "id": "shop_deca_ore_box", "name": "데카 원석 상자 (증표 300, 어비스 3곳 각 주 3회)", "aliases": ["데카 원석 상자"], "group": "주간 상점 · 계정", "cycle": "weekly", "scope": "account", "count": 9, "assist": "manual", "preset": "shop" },
+    { "id": "shop_guild_rune_shard", "name": "길드 상점 — 룬의 파편 (주 10회)", "aliases": ["길드 상점"], "group": "주간 상점 · 계정", "cycle": "weekly", "scope": "account", "count": 10, "assist": "manual", "preset": "shop" },
+    { "id": "shop_deco_parts", "name": "발터 — 데코 제작 부품류 (25/16/7회)", "aliases": ["데코 부품"], "group": "주간 상점 · 계정", "cycle": "weekly", "scope": "account", "count": 3, "assist": "manual", "preset": "shop", "note": "부품 / 부품+ / 상급 부품 3종을 각각 다 사면 1씩." },
+    { "id": "barter_dona_holywater_box", "name": "물물교환 — 도나 성수 묶음 상자 (호박파이 3)", "aliases": ["도나"], "group": "주간 상점 · 계정", "cycle": "weekly", "scope": "account", "count": 1, "assist": "manual", "preset": "shop" },
+    { "id": "barter_galvin_rope", "name": "물물교환 — 갈빈 튼튼한 밧줄 (장비 부품 1,000)", "aliases": ["갈빈", "밧줄"], "group": "주간 상점 · 계정", "cycle": "weekly", "scope": "account", "count": 1, "assist": "manual", "preset": "shop" },
+
+    { "id": "barter_alissa_scrap", "name": "물물교환 — 알리사 연금술 부스러기 (달걀 10)", "aliases": ["알리사"], "group": "물물교환", "cycle": "daily", "scope": "character", "count": 1, "assist": "materials", "materials": [{ "gather": "달걀", "count": 10 }], "preset": "barter" },
+    { "id": "barter_caitin_bread", "name": "물물교환 — 케이틴 특제 통밀빵 (우유 10)", "aliases": ["케이틴", "통밀빵"], "group": "물물교환", "cycle": "daily", "scope": "character", "count": 1, "assist": "materials", "materials": [{ "gather": "우유", "count": 10 }], "preset": "barter", "note": "성수 교환(메이븐/엔델리온)의 재료." },
+    { "id": "barter_malcolm_pillow", "name": "물물교환 — 말콤 양털 베개 (거미줄 5)", "aliases": ["말콤 베개"], "group": "물물교환", "cycle": "daily", "scope": "character", "count": 1, "assist": "materials", "materials": [{ "gather": "거미줄", "count": 5 }], "preset": "barter" },
+    { "id": "barter_malcolm_score", "name": "물물교환 — 말콤 빈 악보 (양털 50)", "aliases": ["빈 악보"], "group": "물물교환", "cycle": "daily", "scope": "character", "count": 1, "assist": "materials", "materials": [{ "gather": "양털", "count": 50 }], "preset": "barter" },
+    { "id": "barter_fergus_ore", "name": "물물교환 — 퍼거스 철 광석/석탄 (장비 부품, 각 10회)", "aliases": ["퍼거스"], "group": "물물교환", "cycle": "daily", "scope": "character", "count": 20, "assist": "manual", "preset": "barter" },
+    { "id": "barter_tracy_hide", "name": "물물교환 — 트레이시 생가죽/상급 생가죽 (통나무, 각 10회)", "aliases": ["트레이시"], "group": "물물교환", "cycle": "daily", "scope": "character", "count": 20, "assist": "materials", "materials": [{ "gather": "통나무", "count": 110 }], "preset": "barter" },
+
+    { "id": "event_weekend_abyss", "name": "이벤트 — 주말에는 어비스", "aliases": ["주말 어비스"], "group": "이벤트", "cycle": "weekly", "scope": "character", "count": 3, "assist": "combat", "preset": "event", "verify": true },
+    { "id": "event_weekend_raid", "name": "이벤트 — 주말에는 레이드", "aliases": ["주말 레이드"], "group": "이벤트", "cycle": "weekly", "scope": "character", "count": 1, "assist": "combat", "preset": "event", "verify": true },
+    { "id": "parttime_weekly_membership", "name": "아르바이트 (주간 멤버십)", "aliases": ["멤버십 알바"], "group": "이벤트", "cycle": "weekly", "scope": "character", "count": 1, "assist": "manual", "preset": "event" }
+  ]
+}

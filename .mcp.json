@@ -1,0 +1,17 @@
+{
+  "mcpServers": {
+    "mabinogi": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["${CLAUDE_PROJECT_DIR:-.}/server/index.mjs"],
+      "env": {
+        "MABI_PROFILE": "core",
+        "MABI_WINGS_SESSION_BUDGET": "30",
+        "MABI_WINGS_DAILY_BUDGET": "100",
+        "MABI_WINGS_RESERVE": "20",
+        "MABI_MAX_WAIT_SEC": "270",
+        "MABI_ACTION_TIMEOUT_SEC": "3600"
+      }
+    }
+  }
+}

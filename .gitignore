@@ -1,0 +1,15 @@
+# 서버가 남기는 감사 로그(게임에 보낸 명령 기록)
+logs/
+
+# 숙제 진행 상태(개인 기록). 목록 정의(data/homework.json)는 추적한다.
+data/homework-state.json
+data/homework-state.json.tmp
+
+# 개인 로컬 설정
+.claude/settings.local.json
+
+node_modules/
+.DS_Store
+
+# 하루 정령의 날개 지출 장부(개인 기록)
+data/wings-ledger.json

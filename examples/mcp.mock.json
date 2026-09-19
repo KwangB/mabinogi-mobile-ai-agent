@@ -1,0 +1,21 @@
+{
+  "mcpServers": {
+    "mabinogi": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["server/index.mjs"],
+      "env": {
+        "MABINOGI_CLI_PATH": "server/mock/mock-cli.mjs",
+        "MOCK_GUILD_QUEST": "1",
+        "MABI_PROFILE": "core",
+        "MABI_WINGS_SESSION_BUDGET": "30",
+        "MABI_WINGS_DAILY_BUDGET": "100",
+        "MABI_WINGS_RESERVE": "20",
+        "MABI_MAX_WAIT_SEC": "120",
+        "MABI_LOG_DIR": "logs/mock",
+        "MABI_HOMEWORK_DIR": "logs/mock",
+        "MABI_LEDGER_DIR": "logs/mock"
+      }
+    }
+  }
+}
