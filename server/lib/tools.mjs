@@ -854,7 +854,7 @@ export function createToolset(ctx) {
         ok: true,
         ...extra,
         ...renderBoard({ store: homeworkStore, defs, state, character, c, pendingOnly: args.pendingOnly !== false, cycle: ['daily', 'weekly'].includes(args.cycle) ? args.cycle : 'all', detail: args.detail === true }),
-        ...(guideDefs.length ? (args.detail === true ? { selfPlay: { names: guideDefs.map((g) => g.name), tip: '직접 플레이 콘텐츠(체크리스트 제외). 물어보면 homework(action:"guide").' } } : { selfPlay: `${guideDefs.map((g) => g.name.split(' (')[0]).join('·')}=직접 플레이(체크 안 함, guide)` }) : {}),
+        ...(guideDefs.length ? (args.detail === true ? { selfPlay: { names: guideDefs.map((g) => g.name), tip: '직접 플레이 콘텐츠. 규칙·입장 조건은 homework(action:"guide").' } } : { selfPlay: `${guideDefs.map((g) => g.name.split(' (')[0]).join('·')}=직접 플레이(규칙은 guide)` }) : {}),
       });
 
       const syncFromGame = async () => {

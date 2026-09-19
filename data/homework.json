@@ -6,7 +6,7 @@
     "cycle": "daily(매일 06:00 KST 초기화) | weekly(매주 월요일 06:00 KST 초기화)",
     "scope": "character(캐릭터별) | account(계정 공유)",
     "assist": "auto(게임에서 진행도 자동 동기화) | materials(AI 가 재료 채집을 도울 수 있음, 교환·제출은 직접) | manual(직접 하고 체크) | combat(전투 콘텐츠: AI 커넥터로 대신할 수 없음, 직접 하고 체크)",
-    "preset": "core(기본 켜짐) | shop | barter | event | legacy | raid-abyss — homework(action:'enable', group:'preset:shop') 로 묶음 단위로 켤 수 있음. raid-abyss(어비스·레이드·뱅가드 브리치)는 '사람이 직접 하는 콘텐츠'라 체크리스트에서 빼고 아래 guides 로 안내한다(2026-09-19 사용자 결정)."
+    "preset": "core(기본 켜짐) | shop | barter | event | legacy | raid-abyss — homework(action:'enable', group:'preset:shop') 로 묶음 단위로 켤 수 있음. raid-abyss(어비스·레이드·뱅가드 브리치)는 직접 플레이하는 콘텐츠지만 주간 전리품 횟수를 보고 싶다는 요청으로 켜 두고 쓴다(2026-09-19). 게임이 진행도를 주지 않아 수동 체크. 규칙은 아래 guides."
   },
   "guides": [
     {

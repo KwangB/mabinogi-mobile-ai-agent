@@ -13,3 +13,6 @@ node_modules/
 
 # 하루 정령의 날개 지출 장부(개인 기록)
 data/wings-ledger.json
+
+# 실사용 기록장(개인 메모, 배포 안 함)
+docs/field-notes.md
