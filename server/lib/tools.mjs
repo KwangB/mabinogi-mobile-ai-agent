@@ -42,7 +42,7 @@ const NAME_RULE = '이름은 해당 query 결과의 값과 글자 그대로 일�
 
 // core = 초보자 4대 목적(숙제 · 생활 레벨업 · 채집/제작 돌리기 · 모험가 길드 정기 의뢰)에 필요한 도구만.
 // 나머지는 MABI_PROFILE=full 일 때만 노출한다(도구 정의는 매 요청 컨텍스트에 실리므로 줄일수록 토큰이 준다).
-export const CORE_TOOLS = new Set(['status', 'query', 'snapshot', 'gather', 'craft', 'alter', 'collect_altered', 'stop_action', 'job', 'homework']);
+export const CORE_TOOLS = new Set(['status', 'query', 'snapshot', 'gather', 'craft', 'alter', 'collect_altered', 'stop_action', 'job', 'homework', 'plan_craft']);
 
 export const TOOLS = [
   {
@@ -230,6 +230,22 @@ export const TOOLS = [
     annotations: ACT,
   },
   {
+    name: 'plan_craft',
+    title: '재료 계획 (무료)',
+    description:
+      '제작·가공 목표에 필요한 재료를 부족분까지 따라 내려가 채집 → 가공 → 제작 순서의 실행 계획과 정령의 날개 예상 비용을 만든다(무료, 실행 없음). 재료가 모자란 요청은 먼저 이 도구로 표를 만들어 승인받고 steps 순서대로 gather/alter/craft 를 호출한다. 게임은 재료를 "부족할 때만" 알려 주므로 uncertain 에 적힌 항목은 실행 중 다시 부족해질 수 있다.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        displayName: { type: 'string', description: `목표 제작법(get_craftable_items) 또는 가공(get_alterable_items)의 DisplayName. ${NAME_RULE}` },
+        count: { type: 'integer', minimum: 1, description: '원하는 결과물 개수(기본 1). 제작 횟수가 아니라 개수' },
+      },
+      required: ['displayName'],
+      additionalProperties: false,
+    },
+    annotations: { readOnlyHint: true },
+  },
+  {
     name: 'raw_call',
     title: '신규 명령 호출',
     description: '패치로 capabilities 에 새로 생겨 전용 도구가 없는 명령만 호출한다(기존 실행형 명령은 거부). 먼저 query(capabilities, compact:false, filter) 로 사양을 읽는다. requiresConfirm 명령은 사용자 승인 후 approvedByUser:true.',
@@ -320,26 +336,41 @@ export function createToolset(ctx) {
     return sum;
   }
 
+  /** 목록 조회 캐시(무료 호출이지만 CLI 프로세스 1회 ≈ 0.5초). 비용이 나가는 활동이 끝나면 invalidateLists() 로 비운다. */
+  const listCache = new Map();
+  const CACHEABLE_LISTS = new Set(['get_gatherable_items', 'get_craftable_items', 'get_alterable_items']); // 악기·악보 목록은 장착 상태가 바뀌므로 캐시하지 않는다
+  const invalidateLists = () => listCache.clear();
+  async function fetchList(command, { fresh = false } = {}) {
+    const hit = CACHEABLE_LISTS.has(command) ? listCache.get(command) : null;
+    if (!fresh && hit && Date.now() - hit.at < config.listCacheSec * 1000) return hit;
+    const res = await cli.call(command);
+    if (!isSuccess(res)) return { failure: fromCliFailure(res, { during: command }) };
+    const ex = shape.extractRows(res.body);
+    const entry = { at: Date.now(), rows: (ex?.rows ?? []).filter(isPlainObject), meta: ex?.meta ?? {} };
+    if (CACHEABLE_LISTS.has(command)) listCache.set(command, entry);
+    return entry;
+  }
+
   /** 지금 캘 수 있는 채집물 이름 전체(무료). 채집 전후를 비교해 새로 열린 채집물(=생활 레벨 상승 추정)을 찾는 데 쓴다. */
-  async function listGatherableNames() {
-    const res = await cli.call('get_gatherable_items');
-    if (!isSuccess(res)) return null;
-    const rows = shape.extractRows(res.body)?.rows;
-    if (!rows) return null;
-    return new Set(rows.filter((r) => isPlainObject(r) && typeof r.DisplayName === 'string').map((r) => r.DisplayName));
+  async function listGatherableNames({ fresh = false } = {}) {
+    const list = await fetchList('get_gatherable_items', { fresh });
+    if (list.failure) return null;
+    return new Set(list.rows.filter((r) => typeof r.DisplayName === 'string').map((r) => r.DisplayName));
   }
 
   /** 조회로 이름이 정확히 일치하는 행을 찾는다(무료). 없으면 후보를 돌려준다. */
   async function resolveExact(command, name, key = 'DisplayName') {
-    const res = await cli.call(command, name);
-    if (!isSuccess(res)) return { failure: fromCliFailure(res, { during: command }) };
-    const extracted = shape.extractRows(res.body);
-    const rows = extracted?.rows ?? [];
-    const exact = rows.find((r) => isPlainObject(r) && r[key] === name);
-    if (exact) return { row: exact, meta: extracted?.meta ?? {} };
-    const candidates = rows.map((r) => (isPlainObject(r) ? r[key] : null)).filter(Boolean).slice(0, 10);
+    const list = await fetchList(command);
+    if (list.failure) return { failure: list.failure };
+    const rows = list.rows;
+    const same = rows.filter((r) => r[key] === name);
+    // 같은 이름이 여러 줄이면(장신구 SS 등) 지금 가능한 줄 → 재료 부족 줄 → 첫 줄 순으로 고른다
+    const exact = same.find((r) => r.Craftable === true || r.Alterable === true || r.ToolOk === true) || same.find((r) => r.Reason === 'not_enough_ingredient') || same[0];
+    if (exact) return { row: exact, meta: list.meta };
+    const needle = String(name).toLowerCase();
+    const candidates = [...new Set(rows.map((r) => r[key]).filter((v) => typeof v === 'string' && v.toLowerCase().includes(needle)))].slice(0, 10);
     return {
-      meta: extracted?.meta ?? {},
+      meta: list.meta,
       failure: fail('not_found', `"${name}" 와(과) 정확히 일치하는 항목이 없습니다.`, {
         candidates,
         tip: candidates.length
@@ -439,6 +470,7 @@ export function createToolset(ctx) {
         const watcher = watcherFactory ? watcherFactory(j, main) : null;
         const res = await main;
         const watch = watcher ? await watcher : undefined;
+        invalidateLists();
         const after = await getWingsBalance();
         const started = res.transportOk && (res.status === 'accepted' || (res.status === 'unknown' && !res.errorCode));
         const settled = wings.settle({ before, after, started, assumeCost: true });
@@ -761,6 +793,7 @@ export function createToolset(ctx) {
       try {
         job = jobs.start('collect', `가공 수령: ${displayName}`, async () => {
           const { res, settled } = await runMeasured('complete_altering_work', { displayName }, { timeoutSec: config.actionTimeoutSec });
+          invalidateLists();
           const after = await cli.call('get_altering_works');
           const remaining = isSuccess(after) ? (shape.extractRows(after.body)?.rows ?? []).filter((w) => isPlainObject(w) && (w.IsCompleted === true || w.State === 'Completed')).length : undefined;
           return actionResult(res, settled, shape.prune({ remainingCompleted: remaining, next: remaining ? '다른 시설에 완료된 작업이 남아 있습니다. 시설마다 한 번씩 collect_altered 를 호출하세요.' : undefined }));
@@ -830,6 +863,115 @@ export function createToolset(ctx) {
       if (!job) return fail('not_found', '해당 작업이 없습니다(서버가 재시작되면 작업 기록은 사라집니다).', { active: jobs.view(jobs.active) });
       if (action === 'wait') return waitForJob(reqCtx, job, args.waitSec);
       return job.state === 'done' ? { ...job.result, job: jobs.view(job) } : { ok: true, running: true, job: jobs.view(job), ...(job.progress ? { progress: job.progress } : {}) };
+    },
+
+    /** 재료 부족분을 따라 내려가 채집→가공→제작 순서의 계획을 만든다(무료). 게임은 부족한 재료만 알려 주므로 완전한 재료 트리는 아니다. */
+    async plan_craft(args) {
+      const target = String(args.displayName || '').trim();
+      if (!target) return fail('invalid_body', 'displayName 이 필요합니다.');
+      const count = args.count === undefined ? 1 : args.count;
+      if (!Number.isInteger(count) || count < 1) return fail('invalid_count', 'count 는 1 이상의 정수(결과물 개수)여야 합니다.');
+
+      const lists = {};
+      for (const [key, command] of [['craft', 'get_craftable_items'], ['alter', 'get_alterable_items'], ['gather', 'get_gatherable_items']]) {
+        const list = await fetchList(command);
+        if (list.failure) return list.failure;
+        lists[key] = list.rows;
+      }
+      const pickRow = (rows, name, okKey) => {
+        const same = rows.filter((r) => r.DisplayName === name);
+        if (!same.length) return null;
+        return same.find((r) => r[okKey] === true) || same.find((r) => r.Reason === 'not_enough_ingredient') || same[0];
+      };
+      // 이미 대기열에 있는 가공(진행 중·완료 미수령)은 곧 생길 재료로 친다
+      const queued = {};
+      { const w = await cli.call('get_altering_works'); if (isSuccess(w)) for (const row of (shape.extractRows(w.body)?.rows ?? []).filter(isPlainObject)) { if (typeof row.DisplayName === 'string') queued[row.DisplayName] = (queued[row.DisplayName] || 0) + 1; } }
+      const gatherRow = (name) => pickRow(lists.gather, name, 'ToolOk');
+      const alterRow = (name) => pickRow(lists.alter, name, 'Alterable');
+      const craftRow = (name) => pickRow(lists.craft, name, 'Craftable');
+
+      const steps = []; const manual = []; const uncertain = [];
+      const addStep = (kind, displayName, qty, units, unitKey, depth, note) => {
+        const found = steps.find((s) => s.kind === kind && s.displayName === displayName);
+        if (found) { found.qty += qty; found[unitKey] += units; found.depth = Math.max(found.depth, depth); return; }
+        steps.push(shape.prune({ kind, displayName, qty, [unitKey]: units, depth, note }));
+      };
+      const MAX_DEPTH = 4;
+      const resolve = (name, need, depth, chain) => {
+        if (depth > MAX_DEPTH || chain.includes(name)) { manual.push({ displayName: name, qty: need, reason: 'too_deep' }); return; }
+        const g = gatherRow(name);
+        if (g) {
+          if (g.ToolOk === false) manual.push({ displayName: name, qty: need, reason: 'tool_missing' });
+          else addStep('gather', name, need, Math.ceil(need / 100), 'calls', depth);
+          return;
+        }
+        const a = alterRow(name);
+        if (a) {
+          const per = toNumber(a.ProducedPerWork) || 1;
+          const inQueue = queued[name] || 0;
+          const stillNeed = Math.max(0, need - inQueue * per);
+          if (inQueue) uncertain.push({ displayName: name, queued: inQueue, note: `대기열에 ${inQueue}건(약 ${inQueue * per}개)이 있어 그만큼 뺐다. 완료되면 collect_altered 로 수령.` });
+          if (stillNeed === 0) return;
+          const works = Math.ceil(stillNeed / per);
+          if (a.Alterable === false && a.Reason !== 'not_enough_ingredient') { manual.push({ displayName: name, qty: need, reason: a.Reason || 'not_available' }); return; }
+          addStep('alter', name, stillNeed, works, 'works', depth, '등록 1건 = 날개 5개 · 경험치 없음 → 게임에서 직접 거는 편이 이득');
+          const miss = Array.isArray(a.MissingIngredients) ? a.MissingIngredients.filter(isPlainObject) : [];
+          if (!miss.length && works > 1) uncertain.push({ displayName: name, works, note: '재료는 지금 1건 기준으로만 충분하다고 나온다. 여러 건이면 중간에 부족해질 수 있다.' });
+          for (const m of miss) {
+            const short = Math.max(0, (toNumber(m.Required) || 0) * works - (toNumber(m.Owned) || 0));
+            if (short > 0) resolve(m.DisplayName, short, depth + 1, [...chain, name]);
+          }
+          return;
+        }
+        const c = craftRow(name);
+        if (c) {
+          const per = toNumber(c.ProducedPerCraft) || 1;
+          const runs = Math.ceil(need / per);
+          if (c.Craftable === false && c.Reason !== 'not_enough_ingredient') { manual.push({ displayName: name, qty: need, reason: c.Reason || 'not_available' }); return; }
+          addStep('craft', name, need, runs, 'runs', depth, '한 호출에 craftCount 로 묶는다(상한 초과 시 invalid_count+maxCount 로 나눈다)');
+          const miss = Array.isArray(c.MissingIngredients) ? c.MissingIngredients.filter(isPlainObject) : [];
+          if (!miss.length && runs > 1) uncertain.push({ displayName: name, runs, note: '재료는 지금 1회 기준으로만 충분하다고 나온다. 여러 회면 중간에 부족해질 수 있다.' });
+          for (const m of miss) {
+            const short = Math.max(0, (toNumber(m.Required) || 0) * runs - (toNumber(m.Owned) || 0));
+            if (short > 0) resolve(m.DisplayName, short, depth + 1, [...chain, name]);
+          }
+          return;
+        }
+        manual.push({ displayName: name, qty: need, reason: 'not_in_lists' });
+      };
+
+      if (!craftRow(target) && !alterRow(target)) {
+        const cands = [...lists.craft, ...lists.alter].map((r) => r.DisplayName).filter((n) => typeof n === 'string' && n.includes(target)).slice(0, 10);
+        return fail('not_found', `"${target}" 이름의 제작법·가공이 없습니다.`, { candidates: [...new Set(cands)] });
+      }
+      resolve(target, count, 0, []);
+
+      const order = { gather: 0, alter: 1, craft: 2 };
+      steps.sort((x, y) => (y.depth - x.depth) || (order[x.kind] - order[y.kind]));
+      const per = config.wingsCostPerActivity;
+      let estimated = 0;
+      for (const s of steps) {
+        s.wings = per * (s.calls ?? s.works ?? (s.kind === 'craft' ? 1 : s.runs));
+        estimated += s.wings;
+        delete s.depth;
+      }
+      const sum = wings.summary();
+      const left = (str) => { const m = /^(\d+)\/(\d+)$/.exec(String(str || '')); return m ? Math.max(0, Number(m[2]) - Number(m[1])) : null; };
+      const sessionLeft = left(sum.session); const dailyLeft = sum.today ? left(sum.today) : null;
+      const alterShare = per * steps.filter((s) => s.kind === 'alter').reduce((n, s) => n + s.works, 0);
+      const warnings = [];
+      if (sessionLeft !== null && estimated > sessionLeft) warnings.push(`세션 한도까지 ${sessionLeft}개 남았는데 예상 ${estimated}개 → 이번 세션에는 일부만 실행된다. 가공 등록을 게임에서 직접 걸면 ${alterShare}개를 아낀다.`);
+      if (dailyLeft !== null && estimated > dailyLeft) warnings.push(`오늘 한도까지 ${dailyLeft}개 남았다.`);
+      const next = steps.length
+        ? '표를 사용자에게 보여 주고 한 번 승인받은 뒤 steps 순서대로 실행: gather(각 1호출, job wait) → alter(건수만큼, 또는 사용자가 게임에서 직접) → 가공은 완료를 기다리지 않고 남은 시간을 알린다 → 완료 후 collect_altered → craft(craftCount).'
+        : '지금 재료가 충분합니다. 바로 craft/alter 를 호출하세요.';
+      const out = shape.prune({
+        ok: true, target, count, manual: manual.length ? manual : undefined, uncertain: uncertain.length ? uncertain : undefined,
+        wings: { estimated, sessionLeft, dailyLeft, balance: sum.balance, alterShare },
+        warnings: warnings.length ? warnings : undefined, next,
+      });
+      out.steps = steps; // 빈 계획도 배열로(에이전트가 length 로 판단)
+      return out;
     },
 
     async homework(args) {

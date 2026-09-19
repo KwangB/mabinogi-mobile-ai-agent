@@ -65,6 +65,8 @@ export function loadConfig(env = process.env) {
 
     // --- 출력 ---
     defaultListLimit: int(env.MABI_LIST_LIMIT, 25, { min: 1, max: 500 }),
+    // 목록 조회(get_*_items) 캐시: 같은 목록을 몇 초 안에 다시 읽지 않는다(CLI 프로세스 1회 ≈ 0.5초). 비용이 나가는 활동이 끝나면 비운다.
+    listCacheSec: int(env.MABI_LIST_CACHE_SEC, 20, { min: 0, max: 600 }),
 
     // --- 감사 로그 (AI 가 게임에 보낸 모든 명령 기록) ---
     logEnabled: oneOf(env.MABI_LOG, ['on', 'off'], 'on') === 'on',

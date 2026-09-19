@@ -8,6 +8,7 @@
       "mcp__mabinogi__snapshot",
       "mcp__mabinogi__job",
       "mcp__mabinogi__homework",
+      "mcp__mabinogi__plan_craft",
       "mcp__mabinogi__stop_action",
       "mcp__mabinogi__stand_up"
     ],

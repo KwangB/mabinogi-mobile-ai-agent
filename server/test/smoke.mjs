@@ -104,7 +104,7 @@ await test('initialize: 프로토콜 버전 협상 + instructions + 도구 15개
   assert.deepEqual(Object.keys(init.result.capabilities), ['tools']);
   const list = await c.request('tools/list', {});
   const names = list.result.tools.map((t) => t.name);
-  assert.deepEqual(names, ['status', 'query', 'snapshot', 'gather', 'craft', 'alter', 'collect_altered', 'play_music', 'change_instrument', 'stop_action', 'stand_up', 'chat', 'job', 'homework', 'raw_call']);
+  assert.deepEqual(names, ['status', 'query', 'snapshot', 'gather', 'craft', 'alter', 'collect_altered', 'play_music', 'change_instrument', 'stop_action', 'stand_up', 'chat', 'job', 'homework', 'plan_craft', 'raw_call']);
   for (const t of list.result.tools) assert.equal(t.inputSchema.type, 'object');
   assert.deepEqual((await c.request('ping', {})).result, {});
   assert.equal((await c.request('nope/method', {})).error.code, -32601);
@@ -335,7 +335,7 @@ await test('인코딩: 원문 한글이 깨지는 환경 → base64 로 자동 �
   assert.equal(sent.ok, true);
   assert.deepEqual(c.state().chatLog, ['반가워요'], '깨진 글자가 전송되면 안 된다');
   const g = (await c.tool('query', { command: 'get_gatherable_items', filter: '통나무' })).payload;
-  assert.deepEqual(g.rows.map((r) => r.DisplayName), ['통나무']);
+  assert.deepEqual(g.rows.map((r) => r.DisplayName), ['통나무', '단단한 통나무']);
   const st = (await c.tool('status')).payload;
   assert.equal(st.cli.bodyEncoding, 'base64');
   assert.equal(st.cli.encodingConfirmed, true);
@@ -554,7 +554,7 @@ await test('snapshot gear: 쓸 수 있는 도구가 없는 채집물 + 악기 �
   await c.init();
   const { payload } = await c.tool('snapshot', { sections: ['gear'] });
   assert.deepEqual(payload.gear.gatherables.noUsableTool, ['철광석']);
-  assert.equal(payload.gear.gatherables.total, 6);
+  assert.equal(payload.gear.gatherables.total, 7);
   assert.deepEqual(payload.gear.instruments.map((i) => i.Name), ['류트', '만돌린']);
   assert.equal(payload.gear.advice, undefined);
   const broken = (await c.tool('gather', { displayName: '철광석' })).payload;
@@ -562,12 +562,12 @@ await test('snapshot gear: 쓸 수 있는 도구가 없는 채집물 + 악기 �
   c.close();
 });
 
-await test('core 묶음: 초보자 4대 목적용 도구 10개만 노출(토큰 절약), 나머지는 호출도 불가', async () => {
+await test('core 묶음: 초보자용 도구 11개만 노출(토큰 절약), 나머지는 호출도 불가', async () => {
   const c = new Client('core', { MABI_PROFILE: 'core' });
   await c.init();
   const tools = (await c.request('tools/list', {})).result.tools;
-  assert.deepEqual(tools.map((t) => t.name), ['status', 'query', 'snapshot', 'gather', 'craft', 'alter', 'collect_altered', 'stop_action', 'job', 'homework']);
-  assert.ok(JSON.stringify(tools).length < 7000, `core 도구 정의가 너무 큼: ${JSON.stringify(tools).length}`);
+  assert.deepEqual(tools.map((t) => t.name), ['status', 'query', 'snapshot', 'gather', 'craft', 'alter', 'collect_altered', 'stop_action', 'job', 'homework', 'plan_craft']);
+  assert.ok(JSON.stringify(tools).length < 8500, `core 도구 정의가 너무 큼: ${JSON.stringify(tools).length}`);
   assert.equal((await c.request('tools/call', { name: 'chat', arguments: { message: 'hi', approvedByUser: true } })).error.code, -32602);
   c.close();
 });
@@ -710,6 +710,26 @@ await test('토큰 절약: compact:false(원본) 조회에도 limit 이 적용�
   assert.equal(raw.data.items.length, 2);
   assert.equal(raw.truncated, true);
   assert.ok(raw.total > 2);
+  c.close();
+});
+
+await test('plan_craft: 부족 재료를 따라 내려가 채집→가공→제작 계획과 비용을 만든다(무료)', async () => {
+  const c = new Client('plan');
+  await c.init();
+  const p = (await c.tool('plan_craft', { displayName: '활', count: 2 })).payload;
+  assert.equal(p.ok, true);
+  assert.deepEqual(p.steps.map((s) => [s.kind, s.displayName, s.qty]), [['gather', '단단한 통나무', 10], ['alter', '목재', 6], ['craft', '활', 2]]);
+  assert.equal(p.steps[0].calls, 1);
+  assert.equal(p.steps[1].works, 2);
+  assert.equal(p.steps[2].runs, 2);
+  assert.equal(p.wings.estimated, 20, '채집 5 + 가공 2건 10 + 제작 5');
+  assert.equal(p.wings.alterShare, 10);
+  assert.equal(fs.existsSync(c.stateFile), false, '계획은 날개를 쓰지 않는다');
+  const locked = (await c.tool('plan_craft', { displayName: '판금 투구S' })).payload;
+  assert.equal(locked.steps.length, 0, '빈 steps 도 배열로 온다');
+  assert.equal(locked.manual[0].reason, 'insufficient_living_skill_level');
+  const none = (await c.tool('plan_craft', { displayName: '없는 것' })).payload;
+  assert.equal(none.error, 'not_found');
   c.close();
 });
 

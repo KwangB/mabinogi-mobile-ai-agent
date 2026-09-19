@@ -84,6 +84,7 @@ const GATHERABLES = [
   { DisplayName: '양털', ToolOk: true },
   { DisplayName: '두꺼운 양털', ToolOk: true },
   { DisplayName: '통나무', ToolOk: true },
+  { DisplayName: '단단한 통나무', ToolOk: true },
   { DisplayName: '철광석', ToolOk: false },
   { DisplayName: '은붕어', ToolOk: true, fishing: true },
   { DisplayName: '막힌 버섯', ToolOk: true, blocked: true },
@@ -91,6 +92,8 @@ const GATHERABLES = [
 const CRAFTABLES = [
   { DisplayName: '가는 실 뭉치', Craftable: true, ProducedPerCraft: 2, Reason: null, MissingIngredients: [] },
   { DisplayName: '고급 옷감', Craftable: false, ProducedPerCraft: 1, Reason: 'not_enough_ingredient', MissingIngredients: [{ DisplayName: '가는 실', Required: 10, Owned: 0 }] },
+  { DisplayName: '활', Craftable: false, ProducedPerCraft: 1, Reason: 'not_enough_ingredient', MissingIngredients: [{ DisplayName: '목재', Required: 3, Owned: 0 }] },
+  { DisplayName: '판금 투구S', Craftable: false, ProducedPerCraft: 1, Reason: 'insufficient_living_skill_level', MissingIngredients: [] },
 ];
 const ALTERABLES = [
   { DisplayName: '가는 실', Alterable: true, ProducedPerWork: 5, Reason: null, MissingIngredients: [], facility: '물레' },
