@@ -679,6 +679,40 @@ await test('감사 로그(JSONL) 기록', async () => {
   assert.ok(lines.some((l) => l.command === 'write_chat' && l.body === '안녕하세요! 양털 구해요'));
 });
 
+await test('날개 절약: 가방이 거의 차면 제작도 시작하지 않는다', async () => {
+  const c = new Client('craft-bag-full', { MOCK_BAG_CURRENT: '790' });
+  await c.init();
+  const refused = (await c.tool('craft', { displayName: '가는 실 뭉치', craftCount: 5 })).payload;
+  assert.equal(refused.error, 'bag_nearly_full');
+  assert.equal(refused.bagPercent, 99);
+  assert.equal(fs.existsSync(c.stateFile), false, '날개를 쓰지 않았다');
+  c.close();
+});
+
+await test('채집 후 새로 열린 채집물(newGatherables)로 생활 레벨 상승을 알린다', async () => {
+  const c = new Client('unlock', { MOCK_UNLOCK_AFTER_GATHER: '황금 양털', MOCK_GATHER_TICK_MS: '5', MOCK_GATHER_PER_TICK: '50' });
+  await c.init();
+  const first = (await c.tool('gather', { displayName: '양털' })).payload;
+  assert.equal(first.result, 'completed');
+  assert.deepEqual(first.newGatherables, ['황금 양털']);
+  assert.ok(first.next.includes('레벨'));
+  const second = (await c.tool('gather', { displayName: '양털' })).payload;
+  assert.equal(second.result, 'completed');
+  assert.equal(second.newGatherables, undefined, '이미 열린 것은 다시 알리지 않는다');
+  c.close();
+});
+
+await test('토큰 절약: compact:false(원본) 조회에도 limit 이 적용된다', async () => {
+  const c = new Client('raw-limit');
+  await c.init();
+  const raw = (await c.tool('query', { command: 'get_gatherable_items', compact: false, limit: 2 })).payload;
+  assert.equal(raw.ok, true);
+  assert.equal(raw.data.items.length, 2);
+  assert.equal(raw.truncated, true);
+  assert.ok(raw.total > 2);
+  c.close();
+});
+
 const failed = results.filter((r) => !r.ok);
 console.log(`\n${results.length - failed.length}/${results.length} passed`);
 try { fs.rmSync(tmpRoot, { recursive: true, force: true }); } catch { /* 무시 */ }

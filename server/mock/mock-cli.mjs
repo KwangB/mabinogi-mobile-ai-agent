@@ -11,6 +11,7 @@
 //   MOCK_DISCONNECTED=1  게임 미실행
 //   MOCK_NEW_COMMAND=1   패치로 새 명령이 생긴 상황(get_pets)
 //   MOCK_GATHER_TICK_MS / MOCK_GATHER_PER_TICK / MOCK_ALTER_MS / MOCK_CHAT_RATE_MS
+//   MOCK_UNLOCK_AFTER_GATHER=<이름>  채집이 완료되면 그 이름의 채집물이 새로 열린다(생활 레벨 상승 흉내)
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -36,6 +37,7 @@ const DEFAULT_STATE = {
   gold: 123456,
   items: { 양털: 3, 통나무: 10, 거미줄: 40, '가는 실': 0 },
   altering: [],
+  unlocked: [],
   instrument: '류트',
   playing: null,
   fishing: false,
@@ -216,7 +218,8 @@ async function main() {
     case 'get_weekly_missions':
       return data([{ Title: '어비스 1회', Description: '', CurrentCount: 0, GoalCount: 1, IsCompleted: false, IsRewardReceived: false, HasShortcut: true }]);
     case 'get_gatherable_items':
-      return data({ items: GATHERABLES.filter((g) => !bodyText || includes(g.DisplayName, bodyText)).map(({ DisplayName, ToolOk }) => ({ DisplayName, ToolOk })) });
+      { const all = [...GATHERABLES, ...(loadState().unlocked || []).map((n) => ({ DisplayName: n, ToolOk: true }))];
+        return data({ items: all.filter((g) => !bodyText || includes(g.DisplayName, bodyText)).map(({ DisplayName, ToolOk }) => ({ DisplayName, ToolOk })) }); }
     case 'get_craftable_items':
       return data({ craftingUnlocked: true, items: CRAFTABLES.filter((c) => !bodyText || includes(c.DisplayName, bodyText) || c.MissingIngredients.some((m) => includes(m.DisplayName, bodyText))) });
     case 'get_alterable_items':
@@ -308,6 +311,8 @@ async function main() {
       } finally {
         try { fs.unlinkSync(flag); } catch { /* 없음 */ }
       }
+      const unlock = process.env.MOCK_UNLOCK_AFTER_GATHER;
+      if (unlock) mutate((st) => { st.unlocked = st.unlocked || []; if (!st.unlocked.includes(unlock)) st.unlocked.push(unlock); });
       return ok({ result: 'completed', gained, target: goal, cost: costSentence(loadState()) });
     }
     case 'execute_crafting': {

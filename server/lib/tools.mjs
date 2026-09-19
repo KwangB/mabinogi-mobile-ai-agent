@@ -87,7 +87,7 @@ export const TOOLS = [
     name: 'gather',
     title: '채집 (날개 5)',
     description:
-      '[호출당 정령의 날개 5] 지정한 아이템이 100개가 될 때까지 채집(가장 가까운 채집지로 자동 이동). 비용은 수량과 무관 → 잘게 쪼개 부르지 않는다. 같은 채집지의 다른 드롭은 세지 않으므로 희귀 드롭을 지정하면 같은 비용으로 더 오래 채집한다. 낚시 전용 항목은 자동 낚시를 켜고 바로 반환(스스로 안 끝남 → stop_action). 이름·도구·가방·잔액은 서버가 무료로 사전 점검한다. blocked 면 kind 를 사용자에게 전하고 기다린다.',
+      '[호출당 정령의 날개 5] 지정한 아이템이 100개가 될 때까지 채집(가장 가까운 채집지로 자동 이동). 비용은 수량과 무관 → 잘게 쪼개 부르지 않는다. 같은 채집지의 다른 드롭은 세지 않으므로 희귀 드롭을 지정하면 같은 비용으로 더 오래 채집한다. 낚시 전용 항목은 자동 낚시를 켜고 바로 반환(스스로 안 끝남 → stop_action). 이름·도구·가방·잔액은 서버가 무료로 사전 점검한다. blocked 면 kind 를 사용자에게 전하고 기다린다. 끝나면 newGatherables(새로 열린 채집물)로 생활 레벨 상승 여부를 알 수 있다.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -320,6 +320,15 @@ export function createToolset(ctx) {
     return sum;
   }
 
+  /** 지금 캘 수 있는 채집물 이름 전체(무료). 채집 전후를 비교해 새로 열린 채집물(=생활 레벨 상승 추정)을 찾는 데 쓴다. */
+  async function listGatherableNames() {
+    const res = await cli.call('get_gatherable_items');
+    if (!isSuccess(res)) return null;
+    const rows = shape.extractRows(res.body)?.rows;
+    if (!rows) return null;
+    return new Set(rows.filter((r) => isPlainObject(r) && typeof r.DisplayName === 'string').map((r) => r.DisplayName));
+  }
+
   /** 조회로 이름이 정확히 일치하는 행을 찾는다(무료). 없으면 후보를 돌려준다. */
   async function resolveExact(command, name, key = 'DisplayName') {
     const res = await cli.call(command, name);
@@ -401,7 +410,7 @@ export function createToolset(ctx) {
    * 날개를 아끼는 순서: ① 직전 실패 재시도 차단 → ② 가방 점검(채집) → ③ 예산·하한·하루 상한 → ④ 실행 → ⑤ 실지출 기록
    * ①~③ 은 전부 무료 조회라 거부돼도 날개가 나가지 않는다.
    */
-  async function runCostly(reqCtx, { kind, label, command, body, waitSec, watcherFactory, extra, retryAfterFix, checkBag }) {
+  async function runCostly(reqCtx, { kind, label, command, body, waitSec, watcherFactory, extra, retryAfterFix, checkBag, finalize }) {
     if (jobs.isBusy()) return busyFailure();
     const key = `${command}:${JSON.stringify(body ?? null)}`;
 
@@ -438,6 +447,9 @@ export function createToolset(ctx) {
         else if (result.ok && lastChargedFailure?.key === key) lastChargedFailure = null;
         if (typeof result.gained === 'number' && settled.spent > 0) result.perWing = Math.round((result.gained / settled.spent) * 10) / 10; // 날개 1개당 획득량
         if (bagPercent !== null && bagPercent >= config.bagWarnPercent) result.bagWarning = `시작 시 가방 ${bagPercent}% — 정리하면 같은 비용으로 더 오래 돕니다`;
+        if (finalize && result.ok) {
+          try { Object.assign(result, (await finalize(result)) || {}); } catch { /* 부가 정보라 본 결과를 깨지 않는다 */ }
+        }
         return result;
       });
     } catch {
@@ -537,7 +549,16 @@ export function createToolset(ctx) {
       if (!isSuccess(res)) return fromCliFailure(res, { command });
       const out = { ok: true, command };
       if (res.encodingFallback) out.encodingFallback = res.encodingFallback;
-      if (!compact) return { ...out, data: res.body };
+      if (!compact) {
+        // 원본 그대로이되 목록은 limit 까지만(제작 목록은 1,800행·20만 자가 넘는다 — 2026-09-19 실측).
+        const ex = shape.extractRows(res.body);
+        const rawLimit = clamp(args.limit ?? config.defaultListLimit, 1, 500);
+        if (ex?.key && Array.isArray(ex.rows) && ex.rows.length > rawLimit) {
+          const rows = filter ? ex.rows.filter((row) => shape.matchesText(row, filter)) : ex.rows;
+          return { ...out, total: rows.length, returned: Math.min(rows.length, rawLimit), truncated: rows.length > rawLimit, data: { ...ex.meta, [ex.key]: rows.slice(0, rawLimit) } };
+        }
+        return { ...out, data: res.body };
+      }
 
       const data = res.body;
       if (command === 'get_my_info') return { ...out, data: shape.prune(shape.flattenStats(data)) };
@@ -672,7 +693,15 @@ export function createToolset(ctx) {
         if (baseline === null) extra.stopAtCountNote = '가방 수량을 조회하지 못해 stopAtCount 를 적용하지 않았습니다(최대 100개까지 채집될 수 있음).';
         else watcherFactory = makeGatherWatcher(displayName, stopAt, baseline);
       }
-      return runCostly(reqCtx, { kind: 'gather', label: `채집: ${displayName}`, command: 'execute_gathering', body: { displayName }, waitSec: args.waitSec, watcherFactory, extra, retryAfterFix: args.retryAfterFix, checkBag: true });
+      const baseline = await listGatherableNames();
+      const finalize = async (result) => {
+        if (!baseline || !(result.gained > 0)) return {};
+        const now = await listGatherableNames();
+        if (!now) return {};
+        const newGatherables = [...now].filter((n) => !baseline.has(n));
+        return newGatherables.length ? { newGatherables, next: '새 채집물이 열렸습니다 → 생활 스킬 레벨이 오른 것으로 보입니다. 다음 목표 후보입니다.' } : {};
+      };
+      return runCostly(reqCtx, { kind: 'gather', label: `채집: ${displayName}`, command: 'execute_gathering', body: { displayName }, waitSec: args.waitSec, watcherFactory, extra, retryAfterFix: args.retryAfterFix, checkBag: true, finalize });
     },
 
     async craft(args, reqCtx) {
@@ -691,7 +720,7 @@ export function createToolset(ctx) {
         return fail(reason || 'not_available', `"${displayName}" 은(는) 지금 제작할 수 없습니다. (정령의 날개는 쓰지 않았습니다)`, shape.prune({ Reason: reason, MissingIngredients: found.row.MissingIngredients, ProducedPerCraft: found.row.ProducedPerCraft }));
       }
       return runCostly(reqCtx, {
-        kind: 'craft', label: `제작: ${displayName} ×${craftCount}회`, command: 'execute_crafting', body: { displayName, craftCount }, waitSec: args.waitSec, retryAfterFix: args.retryAfterFix,
+        kind: 'craft', label: `제작: ${displayName} ×${craftCount}회`, command: 'execute_crafting', body: { displayName, craftCount }, waitSec: args.waitSec, retryAfterFix: args.retryAfterFix, checkBag: true,
         extra: shape.prune({ ProducedPerCraft: found.row.ProducedPerCraft }),
       });
     },

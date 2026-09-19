@@ -28,7 +28,7 @@ argument-hint: "<채집물 이름> [수량]"
 - 낚시 전용 항목은 `result:"started"` 로 바로 돌아오고 **스스로 끝나지 않는다.** 시작할 때 이 점을 알리고, 대화를 마칠 때 아직 켜져 있으면 상기시킨다.
 
 ## 4. 보고 (한두 줄)
-`<이름> <gained>개 · 날개 <spentNow>개 사용 · 남은 날개 <balanceAfter> (날개 1개당 <perWing>개)` — `bagWarning` 이 있으면 덧붙인다.
+`<이름> <gained>개 · 날개 <spentNow>개 사용 · 남은 날개 <balanceAfter> (날개 1개당 <perWing>개)` — `bagWarning` 이 있으면 덧붙인다. `newGatherables` 가 있으면 "새로 열린 채집물: …(생활 레벨이 오른 것 같아요)" 한 줄.
 
 ## 5. 거부·중단됐을 때 (쉬운 말로)
 | 결과 | 말해 줄 것 |

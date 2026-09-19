@@ -1,7 +1,7 @@
 # MabinogiMobile_CLI 명령 레퍼런스 (카탈로그 기준일 2026-09-17)
 
 > 출처: 게임 CLI 의 `capabilities` 응답을 공개한 커뮤니티 자료(`oupure7-cyber/MABINOBI` 의 `10_RESEARCH/`)와 공식 에린 가이드.
-> 이 Mac 에서는 게임을 실행할 수 없어 **직접 검증하지 못했다.** 최종 기준은 항상 실제 게임의 `capabilities` 응답이다(`query(capabilities, compact:false)`). 베타 기간에는 바뀔 수 있다.
+> 2026-09-19 Windows 실제 게임에서 `capabilities`(28개)·`status`·`snapshot`·`get_gatherable_items`·`get_craftable_items`·`get_alterable_items`·`execute_gathering` 을 확인했다. 그 밖의 명령은 커뮤니티 자료 기준이라 **직접 검증하지 못했다.** 최종 기준은 항상 실제 게임의 `capabilities` 응답이다(`query(capabilities, compact:false)`). 베타 기간에는 바뀔 수 있다.
 
 ## 구조
 
