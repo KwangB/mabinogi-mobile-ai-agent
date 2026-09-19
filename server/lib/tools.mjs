@@ -40,7 +40,7 @@ const RO = { readOnlyHint: true };
 const ACT = { readOnlyHint: false };
 const NAME_RULE = '이름은 해당 query 결과의 값과 글자 그대로 일치해야 한다.';
 
-// core = 초보자 4대 목적(숙제 · 생활 레벨업 · 채집/제작 돌리기 · 모험가 길드 정기 의뢰)에 필요한 도구만.
+// core = 3대 목적(숙제 · 생활 레벨 · 채집/제작/가공 돌리기)에 필요한 도구만.
 // 나머지는 MABI_PROFILE=full 일 때만 노출한다(도구 정의는 매 요청 컨텍스트에 실리므로 줄일수록 토큰이 준다).
 export const CORE_TOOLS = new Set(['status', 'query', 'snapshot', 'gather', 'craft', 'alter', 'collect_altered', 'stop_action', 'job', 'homework', 'plan_craft']);
 

@@ -49,7 +49,7 @@ export function loadConfig(env = process.env) {
     // 비용이 나간 뒤 중단된 활동을 이 시간 안에 같은 조건으로 다시 시도하면 막는다(원인 해결 확인 후 retryAfterFix:true)
     retryGuardSec: int(env.MABI_RETRY_GUARD_SEC, 600, { min: 0, max: 86400 }),
 
-    // --- 도구 묶음: core = 초보자 4대 목적(숙제·생활·채집/제작·정기 의뢰)만, full = 채팅·연주 등 전부 ---
+    // --- 도구 묶음: core = 3대 목적(숙제·생활 레벨·채집/제작/가공)만, full = 채팅·연주 등 전부 ---
     profile: oneOf(env.MABI_PROFILE, ['core', 'full'], 'core'),
 
     // --- 시간 ---

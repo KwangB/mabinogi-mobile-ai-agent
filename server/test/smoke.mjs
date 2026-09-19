@@ -562,7 +562,7 @@ await test('snapshot gear: 쓸 수 있는 도구가 없는 채집물 + 악기 �
   c.close();
 });
 
-await test('core 묶음: 초보자용 도구 11개만 노출(토큰 절약), 나머지는 호출도 불가', async () => {
+await test('core 묶음: 핵심 도구 11개만 노출(토큰 절약), 나머지는 호출도 불가', async () => {
   const c = new Client('core', { MABI_PROFILE: 'core' });
   await c.init();
   const tools = (await c.request('tools/list', {})).result.tools;
