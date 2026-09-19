@@ -6,7 +6,7 @@
 //  4) blocked/1시간 확인/채팅 승인 같은 게임의 안전장치는 절대 우회하지 않고 그대로 사용자에게 전달한다
 import { hintFor } from './hints.mjs';
 import * as shape from './shape.mjs';
-import { HomeworkStore, renderBoard, normalize as normalizeText } from './homework.mjs';
+import { HomeworkStore, renderBoard, humanMinutes, normalize as normalizeText } from './homework.mjs';
 
 export const SERVER_NAME = 'mabinogi';
 export const SERVER_VERSION = '0.1.0';
@@ -123,7 +123,7 @@ export const TOOLS = [
     name: 'alter',
     title: '가공 등록 (날개 5)',
     description:
-      '[호출당 정령의 날개 5] 가공 1건을 시설 대기열에 등록(비동기: 완성은 나중에 collect_altered 로 수령). N건 = N호출 = 5×N개라 날개 효율이 나쁘다 → 여러 건이면 게임에서 직접 거는 편을 권하고, 총비용을 먼저 알린다.',
+      '[호출당 정령의 날개 5] 가공 1건을 시설 대기열에 등록(비동기: 완성은 나중에 collect_altered 로 수령). N건 = N호출 = 5×N개라 날개 효율이 나쁘고 가공은 생활 경험치도 없다 → 여러 건이면 게임에서 직접 거는 편을 권하고, 총비용을 먼저 알린다.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -1001,8 +1001,8 @@ export function createToolset(ctx) {
         if (!objectives) {
           out.source = 'fallback';
           out.hint = connected
-            ? '퀘스트 트래커에 이 의뢰가 보이지 않습니다. 이미 완료했거나, 현재 열려 있는 트래커 탭에 없을 수 있습니다(get_quests 는 지금 보이는 탭만 돌려줌). 아래 횟수는 예전 자료 기준이라 확인이 필요합니다.'
-            : '게임에 연결되지 않아 실제 진행도를 읽지 못했습니다. 아래 횟수는 예전 자료 기준이라 확인이 필요합니다.';
+            ? '퀘스트 트래커에 이 의뢰가 보이지 않습니다. 이미 완료했거나, 현재 열려 있는 트래커 탭에 없을 수 있습니다(get_quests 는 지금 보이는 탭만 돌려줌). 아래 횟수(심층 3·던전 5·사냥터 5)는 2026-07 커뮤니티 자료 기준입니다.'
+            : '게임에 연결되지 않아 실제 진행도를 읽지 못했습니다. 아래 횟수(심층 3·던전 5·사냥터 5)는 2026-07 커뮤니티 자료 기준입니다.';
           objectives = (Array.isArray(plan.fallbackObjectives) ? plan.fallbackObjectives : []).map((o) => ({ Description: o.label, Goal: o.goal, unverified: true }));
           const p = homeworkStore.progressOf(state, target, character, c);
           out.recorded = `${p.count}/${p.goal}`;
@@ -1026,10 +1026,21 @@ export function createToolset(ctx) {
           const done = o.IsCompleted === true || (hasCount && o.Count >= o.Goal);
           const leftRuns = done ? 0 : hasCount ? Math.max(0, o.Goal - o.Count) : o.Goal;
           let spend;
+          let runs;
           if (entry && !done && Number.isFinite(entry.costPerRun) && Number.isFinite(leftRuns)) {
-            const need = leftRuns * entry.costPerRun * (entry.doubleLoot ? 2 : 1);
+            // 더블 루팅 1판이 클리어 2회로 세어지면 필요한 판 수가 절반(올림)이 된다
+            runs = entry.doubleLoot && entry.doubleLootCountsTwice ? Math.ceil(leftRuns / 2) : leftRuns;
+            const need = runs * entry.costPerRun * (entry.doubleLoot ? 2 : 1);
             const have = haveOf(entry.entryCurrency);
-            spend = shape.prune({ currency: entry.entryCurrency, need, have, short: have === null ? undefined : Math.max(0, need - have) });
+            const short = have === null ? undefined : Math.max(0, need - have);
+            // 공식 충전 규칙(은동전 30분/개·100개부터 회복 중단, 마족 공물 12시간/개·10개부터 중단)으로 부족분 회복 시간을 알려 준다
+            const rc = isPlainObject(plan.recharge) ? plan.recharge[entry.entryCurrency] : null;
+            let recoverIn; let capNote;
+            if (rc && short > 0 && Number.isFinite(rc.minutes)) {
+              recoverIn = humanMinutes(short * rc.minutes);
+              if (Number.isFinite(rc.stopsAt) && need > rc.stopsAt) capNote = `자동 회복은 보유 ${rc.stopsAt}개 미만일 때만 → 나머지는 보상·상점으로`;
+            }
+            spend = shape.prune({ currency: entry.entryCurrency, runs, need, have, short, recoverIn, capNote });
           }
           return shape.prune({
             spend,

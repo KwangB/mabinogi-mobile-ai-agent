@@ -390,10 +390,11 @@ await test('숙제: 보드 + 게임 미션 자동 동기화 + 초기화/출현 �
   assert.equal(findRow(payload, 'daily_mission').progress, '1/2', '일일 미션은 보상 수령 기준으로 자동 반영');
   assert.equal(findRow(payload, 'weekly_mission').progress, '0/1');
   assert.equal(findRow(payload, 'black_hole_weekly').left, 7);
-  assert.equal(findRow(payload, 'fieldboss_peri'), undefined, 'legacy 프리셋은 기본으로 꺼져 있다');
+  assert.equal(findRow(payload, 'tower_of_wraith'), undefined, 'legacy 프리셋은 기본으로 꺼져 있다');
+  assert.equal(findRow(payload, 'fieldboss_weekly').left, 1, '필드 보스 토벌 전리품은 주 1회(보스 합산)');
   assert.equal(findRow(payload, 'raid_cavrak'), undefined, '레이드는 체크리스트에서 제외');
   assert.equal(findRow(payload, 'abyss_1'), undefined, '어비스는 체크리스트에서 제외');
-  assert.deepEqual(payload.selfPlay.names, ['어비스 (룬다 어비스)', '레이드']);
+  assert.deepEqual(payload.selfPlay.names, ['어비스 (룬다 어비스)', '레이드', '뱅가드 브리치']);
   assert.deepEqual(payload.upcoming.map((u) => u.at).sort(), ['10:00', '12:00']);
   c.close();
 });
@@ -406,24 +407,25 @@ await test('숙제: 체크하면 목록에서 빠진다(전리품 남은 것만)
   const one = (await c.tool('homework', { action: 'check', item: '검구' })).payload;
   assert.deepEqual(one.changed, [{ name: '검은 구멍 (일일)', progress: '1/1', done: true }]);
   const bosses = (await c.tool('homework', { action: 'check', group: '필드 보스', all: true })).payload;
-  assert.equal(bosses.changed.length, 4, '꺼져 있는 legacy 보스는 제외');
+  assert.equal(bosses.changed.length, 1, '필드 보스는 주 1회짜리 항목 하나');
   const partial = (await c.tool('homework', { action: 'check', item: '결계', count: 3 })).payload;
   assert.equal(partial.changed[0].progress, '3/7');
   const after = (await c.tool('homework', { action: 'list', sync: false, detail: true })).payload;
   assert.equal(findRow(after, 'black_hole_daily'), undefined);
-  assert.equal(findRow(after, 'fieldboss_krama'), undefined);
+  assert.equal(findRow(after, 'fieldboss_weekly'), undefined);
   assert.equal(findRow(after, 'barrier_weekly').left, 4);
-  assert.equal(after.summary.hiddenDone, 5);
+  assert.equal(after.summary.hiddenDone, 2);
   const full = (await c.tool('homework', { action: 'list', sync: false, pendingOnly: false, detail: true })).payload;
-  assert.equal(findRow(full, 'fieldboss_krama').done, true);
+  assert.equal(findRow(full, 'fieldboss_weekly').done, true);
   for (const what of ['어비스', '카브락']) {
     const guideOnly = (await c.tool('homework', { action: 'check', item: what })).payload;
     assert.equal(guideOnly.error, 'guide_only', what);
   }
   assert.equal((await c.tool('homework', { action: 'check', group: '레이드', all: true })).payload.error, 'guide_only');
-  const ambiguous = (await c.tool('homework', { action: 'check', item: '필드 보스' })).payload;
+  const ambiguous = (await c.tool('homework', { action: 'check', item: '미션' })).payload;
   assert.equal(ambiguous.error, 'not_found');
-  assert.ok(ambiguous.candidates.length >= 4);
+  assert.ok(ambiguous.candidates.length >= 3, '일일/주간/길드 미션 중 어느 것인지 물어야 한다');
+  assert.equal((await c.tool('homework', { action: 'check', item: '크라마' })).payload.changed[0].name, '필드 보스 토벌 전리품', '보스 이름은 주 1회 항목의 별칭');
   const undo = (await c.tool('homework', { action: 'uncheck', item: 'black_hole_daily' })).payload;
   assert.equal(undo.changed[0].progress, '0/1');
   c.close();
@@ -448,15 +450,15 @@ await test('숙제: 일일은 매일 06시, 주간은 월요일 06시에 초기�
   await at('2026-09-19T21:30:00Z', async (c) => { // 일 06:30 — 일일 초기화됨, 주간은 유지
     const b = (await c.tool('homework', { action: 'list', sync: false, pendingOnly: false, detail: true })).payload;
     assert.equal(findRow(b, 'black_hole_daily').progress, '0/1');
-    assert.equal(findRow(b, 'fieldboss_krama').done, true);
+    assert.equal(findRow(b, 'fieldboss_weekly').done, true);
   });
   await at('2026-09-20T20:30:00Z', async (c) => { // 월 05:30 — 주간 아직 유지
     const b = (await c.tool('homework', { action: 'list', sync: false, pendingOnly: false, detail: true })).payload;
-    assert.equal(findRow(b, 'fieldboss_krama').done, true);
+    assert.equal(findRow(b, 'fieldboss_weekly').done, true);
   });
   await at('2026-09-20T21:30:00Z', async (c) => { // 월 06:30 — 주간 초기화
     const b = (await c.tool('homework', { action: 'list', sync: false, pendingOnly: false, detail: true })).payload;
-    assert.equal(findRow(b, 'fieldboss_krama').progress, '0/1');
+    assert.equal(findRow(b, 'fieldboss_weekly').progress, '0/1');
     assert.equal(b.reset.weekly, '09-28(월) 06:00 (6일 23시간 뒤)');
   });
 });
@@ -475,14 +477,16 @@ await test('숙제: 프리셋 켜기 / 사용자 항목 / 캐릭터 프로필(�
   assert.equal((await c.tool('homework', { action: 'remove', item: '화분' })).payload.ok, true);
 
   await c.tool('homework', { action: 'check', item: 'black_hole_daily' });
-  await c.tool('homework', { action: 'check', item: '길드 미션' });
+  await c.tool('homework', { action: 'check', item: '무료 상품' });
+  assert.equal((await c.tool('homework', { action: 'check', item: '길드 미션', count: 2 })).payload.changed[0].progress, '2/6', '길드 미션은 주 6개');
   const alt = (await c.tool('homework', { action: 'characters', character: '부캐' })).payload;
   assert.deepEqual(alt.characters, ['기본', '부캐']);
   assert.equal(alt.active, '부캐');
   const altBoard = (await c.tool('homework', { action: 'list', sync: false, pendingOnly: false, detail: true })).payload;
   assert.equal(altBoard.character, '부캐');
   assert.equal(findRow(altBoard, 'black_hole_daily').progress, '0/1', '캐릭터 항목은 프로필별');
-  assert.equal(findRow(altBoard, 'guild_mission').done, true, '계정 항목은 공유');
+  assert.equal(findRow(altBoard, 'cashshop_free').done, true, '계정 항목은 공유');
+  assert.equal(findRow(altBoard, 'guild_mission').progress, '2/6');
   assert.equal((await c.tool('homework', { action: 'list', character: '없는캐릭' })).payload.error, 'not_found');
   c.close();
 });
@@ -494,7 +498,7 @@ await test('숙제: 정기 의뢰 plan — 게임 진행도 + 사용자 공략 �
   assert.equal(payload.source, 'game');
   assert.equal(payload.questTitle, '[주간 목표] 모험가 길드의 정기 의뢰 (1)');
   assert.deepEqual(payload.steps.map((s) => [s.objective, s.progress, s.left, s.where, s.difficulty ?? null, s.doubleLoot]), [
-    ['심층 던전 클리어', '1/3', 2, '입장 레벨 100 심층 던전', '어려움', false],
+    ['심층 던전 클리어', '1/3', 2, '페카 고분 심층', '어려움', false],
     ['던전 클리어', '5/5', 0, '피오드 던전', null, true],
     ['사냥터 임무 클리어', '0/5', 5, '창백한 산', null, true],
   ]);
@@ -508,7 +512,7 @@ await test('숙제: 정기 의뢰 plan — 게임 진행도 + 사용자 공략 �
   await off.init();
   const fb = (await off.tool('homework', { action: 'plan', item: '정기 의뢰' })).payload;
   assert.equal(fb.source, 'fallback');
-  assert.deepEqual(fb.steps.map((s) => [s.objective, s.left, s.where, s.unverified]), [['심층 던전', 3, '입장 레벨 100 심층 던전', true], ['던전', 5, '피오드 던전', true], ['사냥터', 5, '창백한 산', true]]);
+  assert.deepEqual(fb.steps.map((s) => [s.objective, s.left, s.where, s.unverified]), [['심층 던전', 3, '페카 고분 심층', true], ['던전', 5, '피오드 던전', true], ['사냥터', 5, '창백한 산', true]]);
   off.close();
 });
 
@@ -527,7 +531,9 @@ await test('숙제: 어비스·레이드는 체크리스트 대신 가이드(내
   assert.equal(req.meets, false);
   assert.ok(payload.principle.includes('직접 플레이'));
   const all = (await c.tool('homework', { action: 'guide' })).payload;
-  assert.deepEqual(all.guides.map((g) => g.id), ['abyss', 'raid']);
+  assert.deepEqual(all.guides.map((g) => g.id), ['abyss', 'raid', 'vanguard']);
+  const vg = (await c.tool('homework', { action: 'guide', item: '뱅가드' })).payload.guides[0];
+  assert.equal(vg.requirements[0].meets, true, '전투력 45,210 ≥ 21,300');
   c.close();
 
   const off = new Client('hw-guide-off', { MABI_HOMEWORK_DIR: homeworkDir('guide-off'), MABI_NOW: '2026-09-19T00:30:00Z', MOCK_DISCONNECTED: '1' });
@@ -628,7 +634,7 @@ await test('숙제 보드 압축 출력: 1,100자 이내', async () => {
   assert.equal(board.sync, 'ok');
   assert.ok(board.left['일일'].includes('일일 미션 1/2'));
   assert.ok(board.left['주간'].includes('검은 구멍 (주간 초과) 0/7'));
-  assert.ok(board.left['필드 보스'].includes('크라마'));
+  assert.ok(board.left['필드 보스'].includes('필드 보스 토벌 전리품'));
   assert.ok(board.upcoming.includes('10:00'));
   assert.ok(board.selfPlay.includes('직접 플레이'));
   c.close();
@@ -646,12 +652,22 @@ await test('정기 의뢰 plan: 재화 소모 계산(남은 횟수×입장 비�
   await c.init();
   const { payload } = await c.tool('homework', { action: 'plan' });
   const [deep, dungeon, field] = payload.steps;
-  assert.deepEqual(deep.spend, { currency: '마족 공물', need: 4, have: 0, short: 4 });
-  assert.ok(deep.levelTooLow.includes('Lv.100'));
+  assert.deepEqual(deep.spend, { currency: '마족 공물', runs: 2, need: 4, have: 0, short: 4, recoverIn: '2일 0시간' });
+  assert.ok(deep.levelTooLow.includes('Lv.95'), '모의 캐릭터는 Lv.87');
   assert.equal(dungeon.spend, undefined, '끝난 목표는 계산하지 않는다');
-  assert.deepEqual(field.spend, { currency: '은동전', need: 80, have: 84, short: 0 });
+  assert.deepEqual(field.spend, { currency: '은동전', runs: 5, need: 80, have: 84, short: 0 });
   assert.equal(payload.notes, undefined, '참고 문장은 detail 일 때만');
   c.close();
+
+  // 더블 루팅 1판이 클리어 2회로 세어지는 경우: 남은 5회 → 3판 × 10 × 2배 = 60
+  objectives.find((o) => o.match === '사냥터').costPerRun = 10;
+  objectives.find((o) => o.match === '사냥터').doubleLootCountsTwice = true;
+  fs.writeFileSync(file, JSON.stringify(defs));
+  const d = new Client('hw-plan-cost2', { MABI_HOMEWORK_DIR: dir, MABI_NOW: '2026-09-19T00:30:00Z', MOCK_GUILD_QUEST: '1' });
+  await d.init();
+  const twice = (await d.tool('homework', { action: 'plan' })).payload.steps[2].spend;
+  assert.deepEqual(twice, { currency: '은동전', runs: 3, need: 60, have: 84, short: 0 });
+  d.close();
 });
 
 await test('감사 로그(JSONL) 기록', async () => {
